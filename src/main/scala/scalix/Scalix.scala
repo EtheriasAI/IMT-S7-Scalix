@@ -63,7 +63,17 @@ object Scalix extends App {
     })
     array
 
-  //def findMovieDirector(movieId: Int): Option[(Int, String)] if job type == director
+  def findMovieDirector(movieId: Int): Option[(Int, String)]=
+    val request = "https://api.themoviedb.org/3/movie/"+movieId.toString+"/credits?api_key="+api_key
+    val newReq = Source.fromURL(request)
+    val newCon = newReq.mkString
+    val newMovie = parse(newCon).extract[Map[String, Any]]
+    val crew = newMovie("crew").asInstanceOf[List[Any]]
+    val x = crew.filter(_.asInstanceOf[HashMap[String, Any]].get("job").get.equals("Director"))
+    val id = Some(x(0).asInstanceOf[HashMap[String, Any]].get("id").get.asInstanceOf[BigInt].toInt)
+    val name = Some(x(0).asInstanceOf[HashMap[String, Any]].get("name").get.asInstanceOf[String].toString)
+    Option[(Int,String)](id.get,name.get)
+
   //def collaboration(actor1: FullName, actor2: FullName): Set[(String, String)]
 }
 
