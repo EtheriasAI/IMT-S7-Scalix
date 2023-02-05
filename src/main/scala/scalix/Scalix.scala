@@ -4,6 +4,7 @@ import scala.io.Source
 import org.json4s.*
 import org.json4s.native.JsonMethods.*
 
+import java.io.PrintWriter
 import scala.collection.immutable.HashMap
 import scala.collection.mutable
 import scala.language.postfixOps
@@ -18,6 +19,7 @@ object Scalix extends App {
   //val source = Source.fromURL(url)
   //val contents = source.mkString
 
+  val callIdActor : Map[String,Int] = Map()
 
   implicit val formats: DefaultFormats.type = org.json4s.DefaultFormats
 
@@ -28,14 +30,23 @@ object Scalix extends App {
 
   //TODO dont forget import scalix.Scalix.*
   def findActorId(name: String, surname: String):Option[Int]=
-    var request = "https://api.themoviedb.org/3/search/person?api_key="+api_key+"&query="+name+"+"+surname
-    var newReq = Source.fromURL(request)
-    var newCon = newReq.mkString
-    var res = parse(newCon).extract[Map[String, Any]]
+    if !callIdActor.contains(name+surname) then
+      var request = "https://api.themoviedb.org/3/search/person?api_key="+api_key+"&query="+name+"+"+surname
+      var newReq = Source.fromURL(request)
+      var newCon = newReq.mkString
+      var res = parse(newCon).extract[Map[String, Any]]
 
-    var pivot = res.get("results").get.asInstanceOf[List[HashMap[String, Any]]](0)
-    var test = pivot.get("id")
-    Some(test.get.asInstanceOf[BigInt].toInt)
+      var pivot = res.get("results").get.asInstanceOf[List[HashMap[String, Any]]](0)
+      var test = pivot.get("id")
+
+      val filename ="src/data/actor"+pivot.get("id").get+"txt"
+      val out = new PrintWriter(filename)
+      out.print(res)
+      out.close()
+      callIdActor.put(name+surname,test.get.asInstanceOf[BigInt].toInt)
+      println(callIdActor)
+      Some(test.get.asInstanceOf[BigInt].toInt)
+    else callIdActor.get(name+surname)
 
   /**
    * val json = parse(contents)

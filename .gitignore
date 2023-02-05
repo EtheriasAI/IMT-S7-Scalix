@@ -1,4 +1,5 @@
 .target/
 src/main/scala/scalix/test.json
 .idea/
-.roject/traget/
+.project/traget/
+src/data/*
