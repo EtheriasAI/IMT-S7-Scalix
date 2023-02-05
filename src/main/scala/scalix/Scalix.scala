@@ -5,36 +5,37 @@ import org.json4s.*
 import org.json4s.native.JsonMethods.*
 
 import scala.collection.immutable.HashMap
+import scala.collection.mutable
 import scala.language.postfixOps
-import scala.collection.mutable._
+import scala.collection.mutable.*
 
 object Scalix extends App {
 
   val api_key = "d38ee4bb2a73d29b441cf0d729ba367a"
-  val url = s"https://api.themoviedb.org/3/movie/19995/credits?api_key=$api_key"
+  //val url = s"https://api.themoviedb.org/3/movie/19995/credits?api_key=$api_key"
   //val url = s"https://api.themoviedb.org/3/list/8235623?api_key=$api_key"
 
-  val source = Source.fromURL(url)
-  val contents = source.mkString
-  //println(contents)
-  //val json = parse(contents)
+  //val source = Source.fromURL(url)
+  //val contents = source.mkString
+
 
   implicit val formats: DefaultFormats.type = org.json4s.DefaultFormats
-  //Extract
-  val movie = parse(contents).extract[Map[String, Any]]
-  //Movie Id
-  val movieId = movie("id").asInstanceOf[BigInt].toInt
-  //Get cast
-  val movieCast = movie("cast").asInstanceOf[List[Any]]
-  //Get crew
-  val movieCrew = movie("crew").asInstanceOf[List[Any]]
+
   //println(findActorId("Sigourney", "Weaver").get)
   //println(findActorMovies(10205))
+  //println(findMovieDirector(19995).get)
+  //print(collaboration(FullName("Leonardo","Dicaprio"),FullName("Jennifer","Lawrence")))
 
   //TODO dont forget import scalix.Scalix.*
   def findActorId(name: String, surname: String):Option[Int]=
-    val x = movieCast.filter(_.asInstanceOf[HashMap[String, Any]].get("name").get.equals(name + " " + surname))
-    Some(x(0).asInstanceOf[HashMap[String, Any]].get("id").get.asInstanceOf[BigInt].toInt)
+    var request = "https://api.themoviedb.org/3/search/person?api_key="+api_key+"&query="+name+"+"+surname
+    var newReq = Source.fromURL(request)
+    var newCon = newReq.mkString
+    var res = parse(newCon).extract[Map[String, Any]]
+
+    var pivot = res.get("results").get.asInstanceOf[List[HashMap[String, Any]]](0)
+    var test = pivot.get("id")
+    Some(test.get.asInstanceOf[BigInt].toInt)
 
   /**
    * val json = parse(contents)
@@ -63,6 +64,7 @@ object Scalix extends App {
     })
     array
 
+
   def findMovieDirector(movieId: Int): Option[(Int, String)]=
     val request = "https://api.themoviedb.org/3/movie/"+movieId.toString+"/credits?api_key="+api_key
     val newReq = Source.fromURL(request)
@@ -74,6 +76,21 @@ object Scalix extends App {
     val name = Some(x(0).asInstanceOf[HashMap[String, Any]].get("name").get.asInstanceOf[String].toString)
     Option[(Int,String)](id.get,name.get)
 
-  //def collaboration(actor1: FullName, actor2: FullName): Set[(String, String)]
+  case class FullName(firstName: String, lastName: String)
+
+  def collaboration(actor1: FullName, actor2: FullName): Set[(String, String)]=
+    val act1 = findActorMovies(findActorId(actor1.firstName,actor1.lastName).get)
+    val act2 = findActorMovies(findActorId(actor2.firstName,actor2.lastName).get)
+
+
+    var array = Set[(String, String)]()
+    act1.intersect(act2).foreach((e) => {
+      val director = findMovieDirector(e._1).get._2
+      val movie = e._2
+      array += (director, movie)
+    })
+    array
+
+
 }
 
